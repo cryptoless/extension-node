@@ -39,8 +39,11 @@
 * flow
 
     ContractSlotInfo(contract)
+
     Keccak256Hash(slot, owner)
+
     Keccak256Hash(spender, :arrow_up:)
+    
     GetStat(:arrow_up:)
 
  
