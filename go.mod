@@ -5,6 +5,7 @@ require (
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/gogf/gf v1.16.6
 	github.com/qiniu/qmgo v1.0.5
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 )
 
 go 1.14
