@@ -2,6 +2,7 @@
 [TOC]
 
 ## api
+### 0. standard method
 ### [1. getTokenAllowance](https://composer.alchemyapi.io/?composer_state=%7B%22network%22%3A0%2C%22methodName%22%3A%22alchemy_getTokenAllowance%22%2C%22paramValues%22%3A%5B%7B%22contract%22%3A%220xE41d2489571d322189246DaFA5ebDe1F4699F498%22%2C%22owner%22%3A%220xe8095A54C83b069316521835408736269bfb389C%22%2C%22spender%22%3A%220x3Bcc5bD4abBc853395eBE5103b7DbA20411E38db%22%7D%5D%7D)
 
 > Returns the amount which the spender is allowed to withdraw from the owner.
