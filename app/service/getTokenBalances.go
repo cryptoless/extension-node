@@ -4,7 +4,6 @@ import (
 	"extension-node/app/dao"
 	"extension-node/app/model"
 	"extension-node/util/excrypto"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +13,6 @@ type GetTokenBalances struct {
 }
 
 func (a *GetTokenBalances) Get(param *model.GetTokenBalancesParam) *model.GetTokenBalancesResult {
-	fmt.Printf("GetTokenAllowance:%+v", param)
 	rst := model.GetTokenBalancesResult{}
 	rst.Address = param.Address
 

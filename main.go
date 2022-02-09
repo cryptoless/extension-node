@@ -9,6 +9,5 @@ import (
 
 func main() {
 	g.Log().SetAsync(true)
-
 	g.Server().Run()
 }

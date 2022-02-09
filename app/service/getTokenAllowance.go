@@ -4,15 +4,12 @@ import (
 	"extension-node/app/dao"
 	"extension-node/app/model"
 	"extension-node/util/excrypto"
-	"fmt"
 )
 
 type GetTokenAllowance struct {
 }
 
 func (a *GetTokenAllowance) Get(param []model.GetTokenAllowanceParam) *model.GetTokenAllowanceResult {
-	fmt.Printf("GetTokenAllowance:%+v", param)
-
 	p := param[0]
 	contractSlotInfo, err := dao.GetContractSlotInfo(p.Contract)
 	if err != nil {
