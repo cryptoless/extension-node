@@ -7,7 +7,6 @@ import (
 )
 
 type GetTokenBalancesReq struct {
-	ExtApiReq
 	Params []interface{} `p:"params", v:"reqired"`
 }
 
@@ -43,7 +42,6 @@ func (a *GetTokenBalancesReq) Parse() (*GetTokenBalancesParam, error) {
 }
 
 type GetTokenBalancesResp struct {
-	ExtApiResp
 	GetTokenBalancesResult
 }
 

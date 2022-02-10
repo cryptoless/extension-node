@@ -1,4 +1,4 @@
-package model
+package rpc
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/gogf/gf/test/gtest"
 )
 
-func Test_Model(t *testing.T) {
+func Test_Rpc(t *testing.T) {
 	gtest.C(t, func(t *gtest.T) {
 		msg := JsonMessage{}
 		json.Unmarshal([]byte(`{

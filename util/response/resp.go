@@ -1,7 +1,7 @@
 package response
 
 import (
-	"extension-node/app/model"
+	"extension-node/util/rpc"
 
 	"github.com/gogf/gf/net/ghttp"
 )
@@ -20,10 +20,10 @@ func JsonExit(r *ghttp.Request, data ...interface{}) {
 	r.Exit()
 }
 
-func ErrExit(r *ghttp.Request, err error) {
-	resp := model.ExtApiResp{
-		Err: err.Error(),
-	}
-	Json(r, resp)
-	r.Exit()
+func ErrorResponse(r *ghttp.Request, err error) {
+	rsp := (&rpc.JsonMessage{}).ErrorResponse(err)
+	JsonExit(r, rsp)
+}
+func Response(r *ghttp.Request, msg *rpc.JsonMessage) {
+	JsonExit(r, msg)
 }

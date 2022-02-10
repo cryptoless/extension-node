@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"extension-node/app/model"
+	"extension-node/app/service/eth"
+	"extension-node/util/rpc"
 	"fmt"
 	"io"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"sync"
@@ -50,6 +52,10 @@ func buildCallObj(fn reflect.Value, rcvVal reflect.Value) *callObj {
 		g.Log().Error("Registration Api:", fnType.String(), ",unsuport multi-ret")
 		return nil
 	}
+	if fnType.NumOut() == 0 {
+		g.Log().Error("Registration Api:", fnType.String(), ",want error")
+		return nil
+	}
 	if fnType.Out(0) == errType {
 		call.errPos = 0
 	} else {
@@ -58,9 +64,8 @@ func buildCallObj(fn reflect.Value, rcvVal reflect.Value) *callObj {
 	return call
 }
 
-func (a *callObj) call(ctx context.Context, args []reflect.Value) (interface{}, error) {
+func (a *callObj) call(ctx context.Context, args []reflect.Value) (res interface{}, errRes error) {
 
-	var errRes error
 	//catch panic
 	defer func() {
 		if err := recover(); err != nil {
@@ -69,7 +74,7 @@ func (a *callObj) call(ctx context.Context, args []reflect.Value) (interface{}, 
 			buf = buf[:runtime.Stack(buf, false)]
 			method := a.fn.Type().Name()
 			g.Log().Error("methdo:" + method + " crashed: " + fmt.Sprintf("%v\n%s", err, buf))
-			errRes = fmt.Errorf("methdo:" + method + " crashed")
+			errRes = fmt.Errorf("methdo:"+method+" crashed:%+v", err)
 		}
 	}()
 	// build fullargs
@@ -92,7 +97,7 @@ func (a *callObj) call(ctx context.Context, args []reflect.Value) (interface{}, 
 		return reflect.Value{}, err
 	}
 	g.Log().Debugf("call rs:%+v\n", rs)
-	return rs[0].Interface(), errRes
+	return rs[0].Interface(), nil
 }
 
 type serviceRegister struct {
@@ -110,21 +115,32 @@ func init() {
 			callList: make(map[string]*callObj),
 			rcvList:  make(map[string]interface{}),
 		}
-		stand := &Standard{}
-		Service.Registration(stand)
+		eth := &eth.Eth{}
+		Service.Registration(eth)
 	})
 }
 
-func (a *serviceRegister) Registration(rcv interface{}) {
+func (a *serviceRegister) Registration(rcv interface{}) error {
 	rVal := reflect.ValueOf(rcv)
 	rType := rVal.Type()
+
 	if rType.Kind() != reflect.Ptr {
-		g.Log().Panic("Service Registration want point")
+		err := fmt.Errorf("Service Registration want point")
+		g.Log().Error(err)
+		return err
 	}
 	rName := rType.Elem().Name()
+	pkgName := filepath.Base(rType.Elem().PkgPath())
+	if rName == "" || pkgName == "" {
+		err := fmt.Errorf("no rName or pkgName?")
+		g.Log().Error(err)
+		return err
+	}
+
 	if _, ok := a.rcvList[rName]; ok {
-		g.Log().Error("reRegistration:", rName)
-		return
+		err := fmt.Errorf("reRegistration:%s", rName)
+		g.Log().Error(err)
+		return err
 	}
 	a.rcvList[rName] = rcv
 
@@ -137,7 +153,7 @@ func (a *serviceRegister) Registration(rcv interface{}) {
 			continue
 		}
 
-		mName := formatName(m.Name)
+		mName := formatName(pkgName, m.Name)
 		if _, ok := a.callList[mName]; ok {
 			g.Log().Error("Registration Api:", mName, ",is existing")
 			continue
@@ -154,23 +170,24 @@ func (a *serviceRegister) Registration(rcv interface{}) {
 	for k, _ := range a.callList {
 		g.Log().Debug("method:", k)
 	}
+	return nil
 }
 
 var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var errType = reflect.TypeOf((*error)(nil)).Elem()
 
-func formatName(name string) string {
+func formatName(pkgname, name string) string {
 	ret := []rune(name)
 	if len(ret) > 0 {
 		ret[0] = unicode.ToLower(ret[0])
 	}
-	return "eth_" + string(ret)
+	return pkgname + "_" + string(ret)
 }
 
-func (a *serviceRegister) Call(method string, msg *model.JsonMessage) (*model.JsonMessage, error) {
+func (a *serviceRegister) Call(method string, msg *rpc.JsonMessage) (*rpc.JsonMessage, error) {
 	call, ok := a.callList[method]
 	if !ok {
-		return nil, errors.New("no method")
+		return nil, &rpc.MethodNotFoundError{Method: method}
 	}
 
 	//build args
@@ -182,9 +199,12 @@ func (a *serviceRegister) Call(method string, msg *model.JsonMessage) (*model.Js
 
 	ctx := context.Background()
 	ret, err := call.call(ctx, args)
-	m := &model.JsonMessage{
-		JsonRcp: msg.JsonRcp,
-		ID:      msg.ID,
+	m := &rpc.JsonMessage{
+		JsonRpc: msg.JsonRpc,
+		Id:      msg.Id,
+	}
+	if err != nil {
+		return nil, err
 	}
 	rst, err := json.Marshal(ret)
 	if err != nil {
@@ -224,7 +244,7 @@ func parseArgs(rawMsg json.RawMessage, argsType []reflect.Type) ([]reflect.Value
 func parseArray(decoder *json.Decoder, argsType []reflect.Type) ([]reflect.Value, error) {
 	args := make([]reflect.Value, 0, len(argsType))
 	for i := 0; decoder.More(); i++ {
-		if i > len(argsType) {
+		if i >= len(argsType) {
 			return nil, fmt.Errorf("too many args, want %d args", len(argsType))
 		}
 		val := reflect.New(argsType[i])

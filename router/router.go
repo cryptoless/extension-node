@@ -3,19 +3,23 @@ package router
 import (
 	"extension-node/app/api"
 	"extension-node/config"
+	"extension-node/util/response"
+	"fmt"
 	"time"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
+	"github.com/gogf/gf/os/gfile"
 	"golang.org/x/time/rate"
 )
 
 var rateLimit *rate.Limiter
 
 func MiddleRateLimit(r *ghttp.Request) {
-	// if !rateLimit.Allow() {
-	if true {
-		r.Response.Writeln(404)
+	if !rateLimit.Allow() {
+		err := fmt.Errorf("rateLimit unAllow")
+		g.Log().Error(err)
+		response.ErrorResponse(r, err)
 	}
 	r.Middleware.Next()
 }
@@ -36,4 +40,8 @@ func init() {
 		404: func(r *ghttp.Request) { r.Response.Write("404, status", r.Get("status"), " found") },
 		500: func(r *ghttp.Request) { r.Response.Write("500, status", r.Get("status"), " found") },
 	})
+
+	//ws
+	s.SetServerRoot(gfile.MainPkgPath())
+	// s.EnableHTTPS("./resource/server.crt", "./resource/server.key")
 }

@@ -1,11 +1,9 @@
 package model
 
 type GetTokenAllowanceReq struct {
-	ExtApiReq
 	Params []GetTokenAllowanceParam `json:"params"`
 }
 type GetTokenAllowanceResp struct {
-	ExtApiResp
 	Result interface{} `json:"result,omitempty"`
 }
 

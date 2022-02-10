@@ -1,12 +1,10 @@
 package model
 
 type GetTokenMetadataReq struct {
-	ExtApiReq
 	Params []string `json:"params"`
 }
 
 type GetTokenMetadataResp struct {
-	ExtApiResp
 	Result GetTokenMetadataResult `json:"result"`
 }
 
