@@ -24,7 +24,7 @@ func MiddleRateLimit(r *ghttp.Request) {
 	r.Middleware.Next()
 }
 
-func init() {
+func RouteInit() {
 
 	limit := rate.Every(time.Duration(config.RateCfg.Interval) * time.Millisecond)
 	rateLimit = rate.NewLimiter(limit, config.RateCfg.Burst)

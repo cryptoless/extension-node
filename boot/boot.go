@@ -1,5 +1,5 @@
 package boot
 
-func init() {
+func BootInit() {
 	MongoInit()
 }
