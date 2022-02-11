@@ -6,99 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"extension-node/app/service/eth"
-	"extension-node/util/rpc"
+	"extension-node/util/model"
+
 	"fmt"
 	"io"
 	"path/filepath"
 	"reflect"
-	"runtime"
+	"strings"
 	"sync"
 	"unicode"
 
 	"github.com/gogf/gf/frame/g"
 )
-
-type callObj struct {
-	fn  reflect.Value
-	rcv reflect.Value
-
-	argsType []reflect.Type
-	hasCtx   bool
-	errPos   int
-}
-
-func buildCallObj(fn reflect.Value, rcvVal reflect.Value) *callObj {
-	call := &callObj{
-		fn:  fn,
-		rcv: rcvVal,
-	}
-	fnType := fn.Type()
-	fistArg := 0
-	if rcvVal.IsValid() {
-		fistArg++
-	}
-	if fnType.NumIn() > fistArg && fnType.In(fistArg) == contextType {
-		call.hasCtx = true
-		fistArg++
-	}
-	// in
-	for i := fistArg; i < fnType.NumIn(); i++ {
-		argType := fnType.In(i)
-		call.argsType = append(call.argsType, argType)
-	}
-
-	// out
-	if fnType.NumOut() > 2 {
-		g.Log().Error("Registration Api:", fnType.String(), ",unsuport multi-ret")
-		return nil
-	}
-	if fnType.NumOut() == 0 {
-		g.Log().Error("Registration Api:", fnType.String(), ",want error")
-		return nil
-	}
-	if fnType.Out(0) == errType {
-		call.errPos = 0
-	} else {
-		call.errPos = 1
-	}
-	return call
-}
-
-func (a *callObj) call(ctx context.Context, args []reflect.Value) (res interface{}, errRes error) {
-
-	//catch panic
-	defer func() {
-		if err := recover(); err != nil {
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			method := a.fn.Type().Name()
-			g.Log().Error("methdo:" + method + " crashed: " + fmt.Sprintf("%v\n%s", err, buf))
-			errRes = fmt.Errorf("methdo:"+method+" crashed:%+v", err)
-		}
-	}()
-	// build fullargs
-	fullargs := []reflect.Value{}
-	if a.rcv.IsValid() {
-		fullargs = append(fullargs, a.rcv)
-	}
-	if a.hasCtx {
-		fullargs = append(fullargs, reflect.ValueOf(ctx))
-	}
-	// args
-	fullargs = append(fullargs, args...)
-	//call
-	rs := a.fn.Call(fullargs)
-	if len(rs) == 0 {
-		return nil, nil
-	}
-	if a.errPos >= 0 && !rs[a.errPos].IsNil() {
-		err := rs[a.errPos].Interface().(error)
-		return reflect.Value{}, err
-	}
-	g.Log().Debugf("call rs:%+v\n", rs)
-	return rs[0].Interface(), nil
-}
 
 type serviceRegister struct {
 	callList map[string]*callObj
@@ -159,7 +78,7 @@ func (a *serviceRegister) Registration(rcv interface{}) error {
 			continue
 		}
 
-		call := buildCallObj(m.Func, rVal)
+		call := buildCallObj(m.Func, rVal, matchIsSub(m.Name) > 0)
 		if call == nil {
 			continue
 		}
@@ -177,41 +96,38 @@ var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var errType = reflect.TypeOf((*error)(nil)).Elem()
 
 func formatName(pkgname, name string) string {
+	pos := matchIsSub(name)
+	if pos > 0 {
+		name = name[0:pos]
+	}
+
 	ret := []rune(name)
 	if len(ret) > 0 {
 		ret[0] = unicode.ToLower(ret[0])
 	}
+
 	return pkgname + "_" + string(ret)
 }
-
-func (a *serviceRegister) Call(method string, msg *rpc.JsonMessage) (*rpc.JsonMessage, error) {
+func matchIsSub(name string) int {
+	return strings.LastIndex(name, "_subscription")
+}
+func (a *serviceRegister) CallAble(ctx context.Context, method string, msg *model.JsonMessage) (*CallAble, error) {
 	call, ok := a.callList[method]
 	if !ok {
-		return nil, &rpc.MethodNotFoundError{Method: method}
+		return nil, &model.MethodNotFoundError{Method: method}
 	}
 
 	//build args
+	// todo: parse panic
 	args, err := parseArgs(msg.Params, call.argsType)
 	if err != nil {
 		return nil, err
 	}
-	//
+	//todo: msg
+	callable := call.CallAble(ctx, args)
+	callable.msg = msg
+	return callable, nil
 
-	ctx := context.Background()
-	ret, err := call.call(ctx, args)
-	m := &rpc.JsonMessage{
-		JsonRpc: msg.JsonRpc,
-		Id:      msg.Id,
-	}
-	if err != nil {
-		return nil, err
-	}
-	rst, err := json.Marshal(ret)
-	if err != nil {
-		return nil, err
-	}
-	m.Result = rst
-	return m, nil
 }
 
 func parseArgs(rawMsg json.RawMessage, argsType []reflect.Type) ([]reflect.Value, error) {
@@ -233,10 +149,10 @@ func parseArgs(rawMsg json.RawMessage, argsType []reflect.Type) ([]reflect.Value
 	}
 
 	for i := len(args); i < len(argsType); i++ {
-		if argsType[i].Kind() != reflect.Ptr {
+		if argsType[i].Kind() != reflect.Ptr && argsType[i].Kind() != reflect.Slice {
 			return nil, fmt.Errorf("missing value for required argument %d", i)
 		}
-		args[i] = reflect.Zero(argsType[i])
+		args = append(args, reflect.Zero(argsType[i]))
 	}
 	return args, nil
 }
@@ -260,4 +176,32 @@ func parseArray(decoder *json.Decoder, argsType []reflect.Type) ([]reflect.Value
 	}
 	_, err := decoder.Token()
 	return args, err
+}
+
+func ParseMessage(body []byte) *model.JsonMessage {
+	req := &model.JsonMessage{}
+	err := json.Unmarshal(body, req)
+
+	if err != nil {
+		g.Log().Error(err)
+		return model.ErrorMessage(err)
+	}
+	g.Log().Debug("Api req:", req.Method)
+	return req
+}
+
+func (a *serviceRegister) HandleMsg(ctx context.Context, msg *model.JsonMessage) *model.JsonMessage {
+
+	callable, err := Service.CallAble(ctx, msg.Method, msg)
+	if err != nil {
+		g.Log().Error(err)
+		return model.ErrorMessage(err)
+	}
+	//
+	ret, err := callable.Call(ctx)
+	if err != nil {
+		g.Log().Error(err)
+		return model.ErrorMessage(err)
+	}
+	return msg.Response(ret)
 }

@@ -3,6 +3,8 @@ package eth
 import (
 	"context"
 	"encoding/json"
+	"extension-node/util/model"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -95,17 +97,22 @@ func (e *Eth) GetUncleCountByBlockNumber(ctx context.Context, blockNrOrHash rpc.
 	return nil, nil
 }
 
-func (e *Eth) Syncing(ctx context.Context) (*big.Int, error) {
-	return nil, nil
+func (e *Eth) Syncing_subscription(ctx context.Context) (*big.Int, error) {
+	return big.NewInt(123), nil
 }
 
 ///
 ///
-func (e *Eth) Subscribe(ctx context.Context, method string, msg *json.RawMessage) (*big.Int, error) {
-	return nil, nil
+func (e *Eth) Subscribe(ctx context.Context, method string, params json.RawMessage) (*model.JsonMessage, error) {
+	fmt.Println(method, params)
+
+	return &model.JsonMessage{
+		Method: method,
+		Params: params,
+	}, nil
 }
-func (e *Eth) Unsubscribe(ctx context.Context, subId string) (*big.Int, error) {
-	return nil, nil
+func (e *Eth) Unsubscribe(ctx context.Context, ids []string) ([]string, error) {
+	return ids, nil
 }
 
 func (e *Eth) Web3_ClientVersion(ctx context.Context) (*big.Int, error) {

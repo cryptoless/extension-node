@@ -6,7 +6,8 @@ require (
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-kit/kit v0.9.0 // indirect
 	github.com/gogf/gf v1.16.6
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/uuid v1.1.5
+	github.com/gorilla/websocket v1.4.2
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
