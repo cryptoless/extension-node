@@ -42,14 +42,14 @@ func (a *WsService) SendOrErr(rst interface{}, err error) {
 	if err != nil {
 		a.Send(model.ErrorMessage(err))
 	} else {
-		//todo
+		msg := model.ParseMessageData(rst)
+		a.Send(msg)
 	}
 }
 
 func (a *WsService) Poll() {
 	for {
 		msgType, body, err := a.ws.ReadMessage()
-		// todo msgType
 		if err != nil {
 			g.Log().Error(err)
 			body := model.ErrorMessage(err)
@@ -61,6 +61,17 @@ func (a *WsService) Poll() {
 			return
 		}
 
+		switch msgType {
+		case websocket.TextMessage:
+		case -1, websocket.CloseMessage:
+			g.Log().Debug("ws closed")
+			return
+		default:
+			g.Log().Warning("UnProcess wsType:", msgType)
+			return
+		}
+
+		// todo: default errMsg
 		msg := model.ParseMessage(body)
 		if msg.IsError() {
 			b, err := json.Marshal(msg)
@@ -78,7 +89,8 @@ func (a *WsService) Poll() {
 			msg := a.sub.Subscribe(rst)
 			a.Send(msg)
 		} else if msg.IsUnsubscribe() {
-			a.sub.UnSubscribe(msg)
+			msg := a.sub.UnSubscribe(msg)
+			a.Send(msg)
 		} else {
 			rst := Service.HandleMsg(a.ctx, msg)
 			a.Send(rst)

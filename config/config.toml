@@ -5,6 +5,8 @@
 	LogPath     = "/tmp/log/extension-node/server"
     RateInterval = 10
     RateBurst = 100
+    # Crt = "path/.crt"
+    # Key = "path/.key"
 # Logger.
 [logger]
     Path        = "/tmp/log/extension-node"

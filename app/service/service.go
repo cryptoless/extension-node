@@ -125,7 +125,7 @@ func (a *serviceRegister) HandleMsg(ctx context.Context, msg *model.JsonMessage)
 		return model.ErrorMessage(err)
 	}
 	//
-	ret, err := callable.Call(ctx)
+	ret, err := callable.Call()
 	if err != nil {
 		g.Log().Error(err)
 		return model.ErrorMessage(err)

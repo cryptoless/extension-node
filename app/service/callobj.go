@@ -181,7 +181,7 @@ func (a *CallAble) Id() string {
 
 }
 
-func (a *CallAble) Call(ctx context.Context) (res interface{}, errRes error) {
+func (a *CallAble) Call() (res interface{}, errRes error) {
 
 	//catch panic
 	defer func() {

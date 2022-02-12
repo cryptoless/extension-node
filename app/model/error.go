@@ -2,14 +2,9 @@ package model
 
 import "fmt"
 
-type Error interface {
-	ErrorCode() int
-	Error() string
-}
-
-type MethodNotFoundError struct {
-	Method string
-}
+// type MethodNotFoundError struct {
+// 	Method string
+// }
 
 func (e *MethodNotFoundError) ErrorCode() int {
 	return -1000
@@ -19,9 +14,9 @@ func (e *MethodNotFoundError) Error() string {
 }
 
 ///
-type ParseError struct {
-	Msg string
-}
+// type ParseError struct {
+// 	Msg string
+// }
 
 func (e *ParseError) ErrorCode() int {
 	return -1001
@@ -31,9 +26,9 @@ func (e *ParseError) Error() string {
 }
 
 ///
-type InvalidRequestError struct {
-	Msg string
-}
+// type InvalidRequestError struct {
+// 	Msg string
+// }
 
 func (e *InvalidRequestError) ErrorCode() int {
 	return -1002
@@ -43,9 +38,9 @@ func (e *InvalidRequestError) Error() string {
 }
 
 ///
-type InvalidMessageError struct {
-	Msg string
-}
+// type InvalidMessageError struct {
+// 	Msg string
+// }
 
 func (e *InvalidMessageError) ErrorCode() int {
 	return -1002
@@ -55,13 +50,23 @@ func (e *InvalidMessageError) Error() string {
 }
 
 ///
-type InvalidParamsError struct {
-	Msg string
-}
+// type InvalidParamsError struct {
+// 	Msg string
+// }
 
 func (e *InvalidParamsError) ErrorCode() int {
 	return -1002
 }
 func (e *InvalidParamsError) Error() string {
+	return e.Msg
+}
+
+// type InternalError struct {
+// 	Msg string
+// }
+func (e *InternalError) ErrorCode() int {
+	return -1003
+}
+func (e *InternalError) Error() string {
 	return e.Msg
 }

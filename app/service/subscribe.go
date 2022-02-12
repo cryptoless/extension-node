@@ -54,17 +54,32 @@ func (s *Subscriber) Subscribe(msg *model.JsonMessage) *model.JsonMessage {
 	return msg.Response(id)
 
 }
-func (s *Subscriber) UnSubscribe(msg *model.JsonMessage) {
+func (s *Subscriber) UnSubscribe(msg *model.JsonMessage) *model.JsonMessage {
 	// todo parse id
+	ca, err := Service.CallAble(s.ctx, msg.Method, msg)
+	if err != nil {
+		return model.ErrorMessage(err)
+	}
+	rst, err := ca.Call()
+	if err != nil {
+		return model.ErrorMessage(err)
+	}
+	ids, ok := rst.(string)
+	if !ok {
+		return model.ErrorMessage(err)
+	}
+
 	s.Lock()
 	defer s.Unlock()
-	if _, ok := s.callables["id"]; ok {
-		delete(s.callables, "id")
+
+	if _, ok := s.callables[ids]; ok {
+		delete(s.callables, ids)
 	}
+
+	return model.ParseResult(true)
 }
 
 func (s *Subscriber) run() {
-	fmt.Println("Subscriber run")
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -72,6 +87,8 @@ func (s *Subscriber) run() {
 			s.Lock()
 			s.callables = make(map[string]*CallAble)
 			s.Unlock()
+			g.Log().Debug("Exit Subscriber:")
+			return
 
 		default:
 			//todo: notify
@@ -95,12 +112,11 @@ func (s *Subscriber) run() {
 		}
 		s.RUnlock()
 
-		//todo
+		//todo: errMsg notify
 		for _, c := range clist {
-			rst, err := c.Call(s.ctx)
+			rst, err := c.Call()
 			if err != nil {
 				g.Log().Error(err)
-				// todo:
 				s.notifier.Notify(c.msg.ErrorResponse(err), nil)
 			} else {
 				s.notifier.Notify(c.msg.Response(rst), nil)

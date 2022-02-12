@@ -15,6 +15,6 @@ func (e *Eth) Subscribe(ctx context.Context, method string, params json.RawMessa
 		Params: params,
 	}, nil
 }
-func (e *Eth) Unsubscribe(ctx context.Context, ids []string) ([]string, error) {
+func (e *Eth) Unsubscribe(ctx context.Context, ids string) (string, error) {
 	return ids, nil
 }

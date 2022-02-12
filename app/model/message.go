@@ -235,7 +235,20 @@ func parseSubscriptionName(rawArgs json.RawMessage) (string, error) {
 	return method, nil
 }
 
-func ParseData(data interface{}) *JsonMessage {
+//todo: build msg with request
+func ParseResult(data interface{}) *JsonMessage {
+	body, err := json.Marshal(data)
+	if err != nil {
+		g.Log().Error(err)
+		return ErrorMessage(err)
+	}
+	msg := &JsonMessage{}
+	msg.Result = body
+	return msg
+}
+
+//todo: build msg with request
+func ParseMessageData(data interface{}) *JsonMessage {
 	body, err := json.Marshal(data)
 	if err != nil {
 		g.Log().Error(err)
@@ -244,6 +257,7 @@ func ParseData(data interface{}) *JsonMessage {
 	return ParseMessage(body)
 }
 
+//todo: build msg with request
 func ParseMessage(body []byte) *JsonMessage {
 	req := &JsonMessage{}
 	err := json.Unmarshal(body, req)

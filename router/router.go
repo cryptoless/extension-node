@@ -9,7 +9,6 @@ import (
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
-	"github.com/gogf/gf/os/gfile"
 	"golang.org/x/time/rate"
 )
 
@@ -41,7 +40,4 @@ func RouteInit() {
 		500: func(r *ghttp.Request) { r.Response.Write("500, status", r.Get("status"), " found") },
 	})
 
-	//ws
-	s.SetServerRoot(gfile.MainPkgPath())
-	// s.EnableHTTPS("./resource/server.crt", "./resource/server.key")
 }
