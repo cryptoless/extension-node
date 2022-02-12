@@ -2,9 +2,6 @@ package eth
 
 import (
 	"context"
-	"encoding/json"
-	"extension-node/app/model"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -35,85 +32,100 @@ func (e *Eth) GetBlockByNumber(ctx context.Context, number *big.Int) (*types.Blo
 ///
 ///
 
-func (e *Eth) GetBalance(ctx context.Context, account common.Address, blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error) {
+func (e *Eth) GetBalance(
+	ctx context.Context,
+	account common.Address,
+	blockNrOrHash rpc.BlockNumberOrHash) (*hexutil.Big, error) {
 	ret := hexutil.Big(*big.NewInt(1234))
 	return &ret, nil
 }
+
 func (e *Eth) GetCode(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
 	return nil, nil
 }
 
-func (e *Eth) Account(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
-	return nil, nil
+func (e *Eth) Account(ctx context.Context, account common.Address) (bool, error) {
+	return true, nil
 }
 
-func (e *Eth) ProtocolVersion(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
-	return nil, nil
+func (e *Eth) ProtocolVersion(ctx context.Context, q ethereum.FilterQuery) (int, error) {
+	return 99, nil
 }
 func (e *Eth) GasPrice(ctx context.Context) (*big.Int, error) {
 	return nil, nil
-
 }
-func (e *Eth) EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error) {
-	return 0, nil
-
-}
-
-///
-///
-func (e *Eth) FeeHistory(ctx context.Context, rang uint64, blockNrOrHash rpc.BlockNumberOrHash, ratio []common.Hash, reward []uint64) (uint64, error) {
-	return 0, nil
-
-}
-func (e *Eth) MaxPriorityFeePerGas(ctx context.Context) (*big.Int, error) {
-	return big.NewInt(1234), nil
-
-}
-
-///
-func (e *Eth) ChainId(ctx context.Context) (*big.Int, error) {
-	return nil, nil
-}
-
-///
-func (e *Eth) Net_Version(ctx context.Context) (*big.Int, error) {
-	return nil, nil
-}
-
-func (e *Eth) Net_Listening(ctx context.Context) (*big.Int, error) {
-	return nil, nil
-}
-func (e *Eth) GetUncleByBlockNumberAndIndex(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash, pos uint64) (*big.Int, error) {
-	return nil, nil
-}
-
-func (e *Eth) GetUncleByBlockHashAndIndex(ctx context.Context, blockHash common.Hash, pos uint64) (*big.Int, error) {
-	return nil, nil
-}
-func (e *Eth) GetUncleCountByBlockHash(ctx context.Context, blockHash common.Hash) (*big.Int, error) {
-	return nil, nil
-}
-func (e *Eth) GetUncleCountByBlockNumber(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*big.Int, error) {
-	return nil, nil
-}
-
-func (e *Eth) Syncing_subscription(ctx context.Context) (*big.Int, error) {
+func (e *Eth) EstimateGas(ctx context.Context, msg ethereum.CallMsg, blockNrOrHash *rpc.BlockNumberOrHash) (*big.Int, error) {
 	return big.NewInt(123), nil
 }
 
 ///
-///
-func (e *Eth) Subscribe(ctx context.Context, method string, params json.RawMessage) (*model.JsonMessage, error) {
-	fmt.Println(method, params)
+type feeHistoryResult struct {
+	OldestBlock  *hexutil.Big     `json:"oldestBlock"`
+	Reward       [][]*hexutil.Big `json:"reward,omitempty"`
+	BaseFee      []*hexutil.Big   `json:"baseFeePerGas,omitempty"`
+	GasUsedRatio []float64        `json:"gasUsedRatio"`
+}
 
-	return &model.JsonMessage{
-		Method: method,
-		Params: params,
+func (e *Eth) FeeHistory(
+	ctx context.Context,
+	blockCount int,
+	lastBlock rpc.BlockNumber,
+	rewardPercentiles []float64) (*feeHistoryResult, error) {
+
+	return nil, nil
+}
+
+func (e *Eth) MaxPriorityFeePerGas(ctx context.Context) (*hexutil.Big, error) {
+	return (*hexutil.Big)(big.NewInt(1234)), nil
+
+}
+
+///
+func (e *Eth) ChainId(ctx context.Context) (*hexutil.Big, error) {
+	return (*hexutil.Big)(big.NewInt(1234)), nil
+}
+
+///
+func (e *Eth) Net_Version(ctx context.Context) string {
+	return "version"
+}
+
+func (e *Eth) Net_Listening(ctx context.Context) bool {
+	return true
+}
+func (e *Eth) GetUncleByBlockNumberAndIndex(
+	ctx context.Context,
+	blockNr rpc.BlockNumber, index hexutil.Uint) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+func (e *Eth) GetUncleByBlockHashAndIndex(
+	ctx context.Context,
+	blockHash common.Hash,
+	index hexutil.Uint) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+func (e *Eth) GetUncleCountByBlockNumber(
+	ctx context.Context,
+	blockNr rpc.BlockNumber) *hexutil.Uint {
+	n := hexutil.Uint(123)
+	return &n
+}
+func (e *Eth) GetUncleCountByBlockHash(
+	ctx context.Context,
+	blockNr rpc.BlockNumber) *hexutil.Uint {
+	n := hexutil.Uint(123)
+	return &n
+}
+
+func (e *Eth) Syncing_subscription(ctx context.Context) (interface{}, error) {
+	return map[string]interface{}{
+		"startingBlock": big.NewInt(123),
 	}, nil
 }
-func (e *Eth) Unsubscribe(ctx context.Context, ids []string) ([]string, error) {
-	return ids, nil
-}
+
+///
 
 func (e *Eth) Web3_ClientVersion(ctx context.Context) (*big.Int, error) {
 	return nil, nil

@@ -121,23 +121,6 @@ func ErrorMessage(err error) *JsonMessage {
 	return msg
 }
 
-// func ResponseMessage(rst interface{}, err error) *JsonMessage {
-// 	m := &JsonMessage{
-// 		JsonRpc: vsn,
-// 		// todo id
-// 		Id: "1",
-// 	}
-// 	if err != nil {
-// 		return ErrorMessage(err)
-// 	}
-// 	ret, err := json.Marshal(rst)
-// 	if err != nil {
-// 		return ErrorMessage(err)
-// 	}
-// 	m.Result = ret
-// 	return m
-// }
-
 type jsonError struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
@@ -250,6 +233,15 @@ func parseSubscriptionName(rawArgs json.RawMessage) (string, error) {
 		return "", errors.New("expected subscription name as first argument")
 	}
 	return method, nil
+}
+
+func ParseData(data interface{}) *JsonMessage {
+	body, err := json.Marshal(data)
+	if err != nil {
+		g.Log().Error(err)
+		return ErrorMessage(err)
+	}
+	return ParseMessage(body)
 }
 
 func ParseMessage(body []byte) *JsonMessage {
