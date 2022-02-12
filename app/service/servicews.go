@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"extension-node/util/model"
+	"extension-node/app/model"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
@@ -61,7 +61,7 @@ func (a *WsService) Poll() {
 			return
 		}
 
-		msg := ParseMessage(body)
+		msg := model.ParseMessage(body)
 		if msg.IsError() {
 			b, err := json.Marshal(msg)
 			if err != nil {

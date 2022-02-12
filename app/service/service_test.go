@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"extension-node/app/model"
 	"extension-node/app/service/eth"
-	"extension-node/util/model"
 	"testing"
 
 	"github.com/gogf/gf/test/gtest"
@@ -13,6 +13,7 @@ import (
 func Test_Service(t *testing.T) {
 
 	gtest.C(t, func(t *gtest.T) {
+		ServiceInit()
 		e := &eth.Eth{}
 		Service.Registration(e)
 		msg := model.JsonMessage{}
@@ -47,6 +48,7 @@ func Test_Service(t *testing.T) {
 	})
 
 	gtest.C(t, func(t *gtest.T) {
+		ServiceInit()
 		e := eth.Eth{}
 		err := Service.Registration(e)
 		t.AssertNE(err, nil)
@@ -54,6 +56,10 @@ func Test_Service(t *testing.T) {
 }
 
 func Benchmark_Handle(b *testing.B) {
+	ServiceInit()
+	e := eth.Eth{}
+	Service.Registration(&e)
+
 	msg := model.JsonMessage{}
 	json.Unmarshal([]byte(`{
 		"jsonrpc":"2.0",

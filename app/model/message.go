@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/gogf/gf/frame/g"
 )
 
 const (
@@ -248,4 +250,16 @@ func parseSubscriptionName(rawArgs json.RawMessage) (string, error) {
 		return "", errors.New("expected subscription name as first argument")
 	}
 	return method, nil
+}
+
+func ParseMessage(body []byte) *JsonMessage {
+	req := &JsonMessage{}
+	err := json.Unmarshal(body, req)
+
+	if err != nil {
+		g.Log().Error(err)
+		return ErrorMessage(err)
+	}
+	g.Log().Debug("Api req:", req.Method)
+	return req
 }

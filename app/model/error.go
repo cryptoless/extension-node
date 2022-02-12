@@ -15,7 +15,7 @@ func (e *MethodNotFoundError) ErrorCode() int {
 	return -1000
 }
 func (e *MethodNotFoundError) Error() string {
-	return fmt.Sprintf("method does not exist/is not available:", e.Method)
+	return fmt.Sprintf("method %s does not exist/is not available", e.Method)
 }
 
 ///

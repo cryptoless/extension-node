@@ -1,6 +1,7 @@
 package api
 
 import (
+	"extension-node/app/model"
 	"extension-node/app/service"
 	"extension-node/util/response"
 
@@ -16,7 +17,7 @@ func (*extApi) Api(r *ghttp.Request) {
 	ws, err := r.WebSocket()
 	if err != nil {
 		// http
-		msg := service.ParseMessage(r.GetBody())
+		msg := model.ParseMessage(r.GetBody())
 		rst := service.Service.HandleMsg(r.GetCtx(), msg)
 		response.Response(r, rst)
 	} else {

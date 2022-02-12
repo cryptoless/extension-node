@@ -1,5 +1,6 @@
 package service
 
+// legacy
 import (
 	"extension-node/app/dao"
 	"extension-node/app/model"

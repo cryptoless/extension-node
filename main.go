@@ -1,6 +1,7 @@
 package main
 
 import (
+	"extension-node/app/service"
 	"extension-node/boot"
 	"extension-node/router"
 
@@ -12,6 +13,7 @@ func main() {
 
 	boot.BootInit()
 	router.RouteInit()
+	service.ServiceInit()
 
 	g.Server().Run()
 }

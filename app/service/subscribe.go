@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"extension-node/util/model"
+	"extension-node/app/model"
 	"fmt"
 	"sync"
 
@@ -29,7 +29,7 @@ func newSubscriber(ctx context.Context, notifier *notifier) *Subscriber {
 	return sub
 }
 func (s *Subscriber) Subscribe(msg *model.JsonMessage) *model.JsonMessage {
-
+	//todo: ratelimit
 	ca, err := Service.CallAble(s.ctx, msg.Method, msg)
 	if err != nil {
 		g.Log().Error(err)

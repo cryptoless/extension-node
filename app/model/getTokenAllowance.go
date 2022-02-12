@@ -1,5 +1,6 @@
 package model
 
+// legacy
 type GetTokenAllowanceReq struct {
 	Params []GetTokenAllowanceParam `json:"params"`
 }

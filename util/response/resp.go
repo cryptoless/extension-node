@@ -1,7 +1,7 @@
 package response
 
 import (
-	"extension-node/util/model"
+	"extension-node/app/model"
 
 	"github.com/gogf/gf/net/ghttp"
 )

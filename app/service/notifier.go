@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"extension-node/util/model"
+	"extension-node/app/model"
 	"sync"
 	"time"
 )
