@@ -2,6 +2,7 @@ package router
 
 import (
 	"extension-node/app/api"
+	"extension-node/app/model"
 	"extension-node/config"
 	"extension-node/util/response"
 	"fmt"
@@ -16,7 +17,7 @@ var rateLimit *rate.Limiter
 
 func MiddleRateLimit(r *ghttp.Request) {
 	if !rateLimit.Allow() {
-		err := fmt.Errorf("rateLimit unAllow")
+		err := model.InternalError(fmt.Sprintf("rateLimit unAllow"))
 		g.Log().Error(err)
 		response.ErrorResponse(r, err)
 	}

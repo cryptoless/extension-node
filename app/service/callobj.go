@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"extension-node/app/model"
 	"fmt"
 	"io"
@@ -24,14 +23,21 @@ type callObj struct {
 	isSub  bool
 	hasCtx bool
 	errPos int
+
+	name string
 }
 
 func buildCallObj(fn reflect.Value, rcvVal reflect.Value, isSub bool) *callObj {
-	call := &callObj{
-		fn:  fn,
-		rcv: rcvVal,
-	}
+
 	fnType := fn.Type()
+	fnName := fnType.String()
+
+	call := &callObj{
+		fn:   fn,
+		rcv:  rcvVal,
+		name: fnName,
+	}
+
 	fistArg := 0
 	if rcvVal.IsValid() {
 		fistArg++
@@ -48,11 +54,11 @@ func buildCallObj(fn reflect.Value, rcvVal reflect.Value, isSub bool) *callObj {
 
 	// out
 	if fnType.NumOut() > 2 {
-		g.Log().Error("Registration Api:", fnType.String(), ",unsupport result>2")
+		g.Log().Error("Registration Api:", fnName, ",unsupport result>2")
 		return nil
 	}
 	if fnType.NumOut() == 0 {
-		g.Log().Error("Registration Api:", fnType.String(), ",want error")
+		g.Log().Error("Registration Api:", fnName, ",want error")
 		return nil
 	}
 	if fnType.Out(0) == errType {
@@ -64,28 +70,31 @@ func buildCallObj(fn reflect.Value, rcvVal reflect.Value, isSub bool) *callObj {
 	return call
 }
 
-func parseArray(decoder *json.Decoder, argsType []reflect.Type) ([]reflect.Value, error) {
+func parseArray(decoder *json.Decoder, argsType []reflect.Type) ([]reflect.Value, model.Error) {
 	args := make([]reflect.Value, 0, len(argsType))
 	for i := 0; decoder.More(); i++ {
 		if i >= len(argsType) {
-			return nil, fmt.Errorf("too many args, want %d args", len(argsType))
+			return nil, model.InvalidParamsError(fmt.Sprintf("too many args, want %d args", len(argsType)))
 		}
 		val := reflect.New(argsType[i])
 		if err := decoder.Decode(val.Interface()); err != nil {
 			g.Log().Error(err)
-			return nil, err
+			return nil, model.ParseError(err.Error())
 		}
 
 		if val.IsNil() && val.Kind() == reflect.Ptr {
-			return nil, fmt.Errorf("missing value for args %d", i)
+			return nil, model.InvalidParamsError(fmt.Sprintf("missing value for args %d", i))
 		}
 		args = append(args, val.Elem())
 	}
 	_, err := decoder.Token()
-	return args, err
+	if err != nil {
+		return nil, model.ParseError(err.Error())
+	}
+	return args, nil
 }
 
-func parseArgs(rawMsg json.RawMessage, argsType []reflect.Type) ([]reflect.Value, error) {
+func parseArgs(rawMsg json.RawMessage, argsType []reflect.Type) ([]reflect.Value, model.Error) {
 	decoder := json.NewDecoder(bytes.NewReader(rawMsg))
 	var args []reflect.Value
 	token, err := decoder.Token()
@@ -93,26 +102,27 @@ func parseArgs(rawMsg json.RawMessage, argsType []reflect.Type) ([]reflect.Value
 	switch {
 	case err == io.EOF || token == nil && err == nil:
 	case err != nil:
-		return nil, err
+		return nil, model.InternalError(err.Error())
 
 	case token == json.Delim('['):
+		var err model.Error
 		if args, err = parseArray(decoder, argsType); err != nil {
 			return nil, err
 		}
 	default:
-		return nil, errors.New("no array")
+		return nil, model.ParseError(err.Error())
 	}
 
 	for i := len(args); i < len(argsType); i++ {
 		if argsType[i].Kind() != reflect.Ptr && argsType[i].Kind() != reflect.Slice {
-			return nil, fmt.Errorf("missing value for required argument %d", i)
+			return nil, model.InvalidParamsError(fmt.Sprintf("missing value for required argument %d", i))
 		}
 		args = append(args, reflect.Zero(argsType[i]))
 	}
 	return args, nil
 }
 
-func (a *callObj) CallAble(ctx context.Context, msg *model.JsonMessage) (ca *CallAble, errRes error) {
+func (a *callObj) CallAble(ctx context.Context, msg *model.JsonMessage) (ca *CallAble, errRes model.Error) {
 	//catch panic
 	defer func() {
 		if err := recover(); err != nil {
@@ -121,7 +131,7 @@ func (a *callObj) CallAble(ctx context.Context, msg *model.JsonMessage) (ca *Cal
 			buf = buf[:runtime.Stack(buf, false)]
 			method := a.fn.Type().Name()
 			g.Log().Error("methdo:" + method + " crashed: " + fmt.Sprintf("%v\n%s", err, buf))
-			errRes = fmt.Errorf("methdo:"+method+" crashed:%+v", err)
+			errRes = model.InvalidRequestError(fmt.Sprintf("methdo:"+method+" crashed:%+v", err))
 		}
 	}()
 	//build args
@@ -181,7 +191,7 @@ func (a *CallAble) Id() string {
 
 }
 
-func (a *CallAble) Call() (res interface{}, errRes error) {
+func (a *CallAble) Call() (res interface{}, errRes model.Error) {
 
 	//catch panic
 	defer func() {
@@ -191,7 +201,7 @@ func (a *CallAble) Call() (res interface{}, errRes error) {
 			buf = buf[:runtime.Stack(buf, false)]
 			method := a.fn.Type().Name()
 			g.Log().Error("methdo:" + method + " crashed: " + fmt.Sprintf("%v\n%s", err, buf))
-			errRes = fmt.Errorf("methdo:"+method+" crashed:%+v", err)
+			errRes = model.InvalidRequestError(fmt.Sprintf("methdo:"+method+" crashed:%+v", err))
 		}
 	}()
 
@@ -201,7 +211,7 @@ func (a *CallAble) Call() (res interface{}, errRes error) {
 		return nil, nil
 	}
 	if a.errPos >= 0 && !rs[a.errPos].IsNil() {
-		err := rs[a.errPos].Interface().(error)
+		err := rs[a.errPos].Interface().(model.Error)
 		return reflect.Value{}, err
 	}
 	return rs[0].Interface(), nil

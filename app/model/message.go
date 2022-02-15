@@ -31,7 +31,7 @@ type subscriptionResult struct {
 }
 
 // A value of this type can a JSON-RPC request, notification, successful response or
-// error response. Which one it is depends on the fields.
+// response. Which one it is depends on the fields.
 type JsonMessage struct {
 	JsonRpc string          `json:"jsonrpc,omitempty"`
 	Id      json.RawMessage `json:"id,omitempty"`
@@ -77,7 +77,7 @@ func (msg *JsonMessage) String() string {
 	return string(b)
 }
 
-func (msg *JsonMessage) ErrorResponse(err error) *JsonMessage {
+func (msg *JsonMessage) ErrorResponse(err Error) *JsonMessage {
 	resp := ErrorMessage(err)
 	resp.Id = msg.Id
 	return resp
@@ -86,7 +86,7 @@ func (msg *JsonMessage) ErrorResponse(err error) *JsonMessage {
 func (msg *JsonMessage) Response(result interface{}) *JsonMessage {
 	enc, err := json.Marshal(result)
 	if err != nil {
-		return msg.ErrorResponse(err)
+		return msg.ErrorResponse(ParseError(err.Error()))
 	}
 
 	resp := &JsonMessage{JsonRpc: vsn, Id: msg.Id, Result: enc}
@@ -97,7 +97,7 @@ func (msg *JsonMessage) SubscriptionResult(result *JsonMessage) *JsonMessage {
 	resp := &JsonMessage{JsonRpc: vsn, Id: msg.Id}
 	err := json.Unmarshal(result.Result, &resp)
 	if err != nil {
-		return msg.ErrorResponse(err)
+		return msg.ErrorResponse(ParseError(err.Error()))
 	}
 
 	resp.JsonRpc = vsn
@@ -105,9 +105,9 @@ func (msg *JsonMessage) SubscriptionResult(result *JsonMessage) *JsonMessage {
 	return resp
 }
 
-func ErrorMessage(err error) *JsonMessage {
+func ErrorMessage(err Error) *JsonMessage {
 	msg := &JsonMessage{JsonRpc: vsn, Id: null, Error: &jsonError{
-		Code:    -1,
+		Code:    err.ErrorCode(),
 		Message: err.Error(),
 	}}
 	ec, ok := err.(Error)
@@ -129,7 +129,7 @@ type jsonError struct {
 
 func (err *jsonError) Error() string {
 	if err.Message == "" {
-		return fmt.Sprintf("json-rpc error %d", err.Code)
+		return fmt.Sprintf("json-rpc err %d", err.Code)
 	}
 	return err.Message
 }
@@ -171,7 +171,7 @@ func isBatch(raw json.RawMessage) bool {
 }
 
 // parsePositionalArguments tries to parse the given args to an array of values with the
-// given types. It returns the parsed values or an error when the args could not be
+// given types. It returns the parsed values or an err when the args could not be
 // parsed. Missing optional arguments are returned as reflect.Zero values.
 func parsePositionalArguments(rawArgs json.RawMessage, types []reflect.Type) ([]reflect.Value, error) {
 	dec := json.NewDecoder(bytes.NewReader(rawArgs))
@@ -240,7 +240,7 @@ func ParseResult(data interface{}) *JsonMessage {
 	body, err := json.Marshal(data)
 	if err != nil {
 		g.Log().Error(err)
-		return ErrorMessage(err)
+		return ErrorMessage(ParseError(err.Error()))
 	}
 	msg := &JsonMessage{}
 	msg.Result = body
@@ -252,7 +252,7 @@ func ParseMessageData(data interface{}) *JsonMessage {
 	body, err := json.Marshal(data)
 	if err != nil {
 		g.Log().Error(err)
-		return ErrorMessage(err)
+		return ErrorMessage(ParseError(err.Error()))
 	}
 	return ParseMessage(body)
 }
@@ -264,7 +264,7 @@ func ParseMessage(body []byte) *JsonMessage {
 
 	if err != nil {
 		g.Log().Error(err)
-		return ErrorMessage(err)
+		return ErrorMessage(ParseError(err.Error()))
 	}
 	g.Log().Debug("Api req:", req.Method)
 	return req

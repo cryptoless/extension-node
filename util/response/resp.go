@@ -20,7 +20,7 @@ func JsonExit(r *ghttp.Request, data ...interface{}) {
 	r.Exit()
 }
 
-func ErrorResponse(r *ghttp.Request, err error) {
+func ErrorResponse(r *ghttp.Request, err model.Error) {
 	rsp := (&model.JsonMessage{}).ErrorResponse(err)
 	JsonExit(r, rsp)
 }

@@ -38,7 +38,7 @@ func (a *WsService) Send(msg *model.JsonMessage) {
 	}
 }
 
-func (a *WsService) SendOrErr(rst interface{}, err error) {
+func (a *WsService) SendOrErr(rst interface{}, err model.Error) {
 	if err != nil {
 		a.Send(model.ErrorMessage(err))
 	} else {
@@ -52,7 +52,7 @@ func (a *WsService) Poll() {
 		msgType, body, err := a.ws.ReadMessage()
 		if err != nil {
 			g.Log().Error(err)
-			body := model.ErrorMessage(err)
+			body := model.ErrorMessage(model.ParseError(err.Error()))
 			b, err := json.Marshal(body)
 			if err != nil {
 				g.Log().Error(err)

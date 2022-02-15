@@ -35,27 +35,27 @@ func ServiceInit() {
 	})
 }
 
-func (a *serviceRegister) Registration(rcv interface{}) error {
+func (a *serviceRegister) Registration(rcv interface{}) model.Error {
 	rVal := reflect.ValueOf(rcv)
 	rType := rVal.Type()
 
 	if rType.Kind() != reflect.Ptr {
-		err := fmt.Errorf("Service Registration want point")
+		err := fmt.Sprintf("Service Registration want point")
 		g.Log().Error(err)
-		return err
+		return model.InternalError(err)
 	}
 	rName := rType.Elem().Name()
 	pkgName := filepath.Base(rType.Elem().PkgPath())
 	if rName == "" || pkgName == "" {
-		err := fmt.Errorf("no rName or pkgName?")
+		err := fmt.Sprintf("no rName or pkgName?")
 		g.Log().Error(err)
-		return err
+		return model.InternalError(err)
 	}
 
 	if _, ok := a.rcvList[rName]; ok {
-		err := fmt.Errorf("reRegistration:%s", rName)
+		err := fmt.Sprintf("reRegistration:%s", rName)
 		g.Log().Error(err)
-		return err
+		return model.InternalError(err)
 	}
 	a.rcvList[rName] = rcv
 
@@ -108,10 +108,10 @@ func matchIsSub(name string) int {
 	return strings.LastIndex(name, "_subscription")
 }
 
-func (a *serviceRegister) CallAble(ctx context.Context, method string, msg *model.JsonMessage) (*CallAble, error) {
+func (a *serviceRegister) CallAble(ctx context.Context, method string, msg *model.JsonMessage) (*CallAble, model.Error) {
 	call, ok := a.callList[method]
 	if !ok {
-		return nil, &model.MethodNotFoundError{Method: method}
+		return nil, model.MethodNotFoundError(fmt.Sprintf("%s", method))
 	}
 
 	return call.CallAble(ctx, msg)

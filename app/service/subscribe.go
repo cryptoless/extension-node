@@ -36,7 +36,7 @@ func (s *Subscriber) Subscribe(msg *model.JsonMessage) *model.JsonMessage {
 		return model.ErrorMessage(err)
 	}
 	if !ca.obj.isSub {
-		err := fmt.Errorf("notifications not supported")
+		err := model.SubscriptionError(ca.obj.name)
 		g.Log().Error(err)
 		return model.ErrorMessage(err)
 
@@ -126,7 +126,7 @@ func (s *Subscriber) run() {
 	}
 }
 
-func (s *Subscriber) subscribe(ca *CallAble) (string, error) {
+func (s *Subscriber) subscribe(ca *CallAble) (string, model.Error) {
 
 	s.Lock()
 	defer s.Unlock()

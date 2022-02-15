@@ -17,7 +17,7 @@ func NewNotifier(ctx context.Context, sendFn func(*model.JsonMessage)) *notifier
 		sendFn: sendFn,
 	}
 }
-func (a *notifier) Notify(rst *model.JsonMessage, err error) error {
+func (a *notifier) Notify(rst *model.JsonMessage, err model.Error) model.Error {
 	if err != nil {
 		return a.send(model.ErrorMessage(err))
 	}
@@ -29,7 +29,7 @@ func (a *notifier) Notify(rst *model.JsonMessage, err error) error {
 	}
 }
 
-func (a *notifier) send(rst *model.JsonMessage) error {
+func (a *notifier) send(rst *model.JsonMessage) model.Error {
 	// todo: buffer
 	a.sendFn(rst)
 	return nil
