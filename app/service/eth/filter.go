@@ -29,7 +29,7 @@ type FilterQuery struct {
 	Topics [][]common.Hash
 }
 
-func (e *Eth) GetLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
+func (e *Eth) GetLogs(ctx context.Context, q FilterQuery) ([]types.Log, error) {
 	return nil, nil
 }
 func (e *Eth) GetFilterChanges(ctx context.Context, filterId string) (interface{}, error) {
